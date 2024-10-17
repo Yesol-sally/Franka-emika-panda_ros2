@@ -123,9 +123,25 @@ gpg: Signature made Fr 05 Jan 2018 06:49:11 PST using RSA key ID 6092693E
 gpg: Can't check signature: No public key
 ```
 
+본인 결과)
+```
+gpg2 --verify patch-*.patch.sign
+gpg: assuming signed data in 'linux-6.8.tar'
+gpg: Signature made Mon 11 Mar 2024 06:39:53 AM KST
+gpg:                using RSA key 647F28654894E3BD457199BE38DBBDC86092693E
+gpg: Can't check signature: No public key
+gpg: assuming signed data in 'patch-5.9.1-rt20.patch'
+gpg: Signature made Thu 29 Oct 2020 05:04:54 AM KST
+gpg:                using RSA key 57892E705233051337F6FDD105641F175712FA5B
+gpg: Can't check signature: No public key
+```
+
+
 3. 여기서 public key를 다운로드 한다. -> 위 예시에서는 `6092693E`
 
-4. 얻은 key를 적용하여 key sesrver를 알아낸다.
+4.
+- Ubuntu 키 서버에서 키 ID가 2872E4CC인 공개 키를 다운로드하여 로컬 GPG 키링에 추가하는 역할을 합니다. 이 공개 키는 특정한 사람이나 조직이 서명을 했을 때, 그 서명을 검증하거나 메시지 암호화를 위한 공개 키로 사용될 수 있습니다.
+이 과정은 주로 소프트웨어 패키지 서명을 검증하거나, 보안 통신을 할 때 GPG 키를 받아서 서명자나 송신자의 신원을 확인하는 데 사용됩니다.
 ```
 gpg2  --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 6092693E
 ```
