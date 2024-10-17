@@ -92,10 +92,10 @@ curl -SLO https://www.kernel.org/pub/linux/kernel/projects/rt/5.9/patch-5.9.1-rt
 
 적용)
 ```
-curl -SLO https://www.kernel.org/pub/linux/kernel/v.6.8/linux-6.8.0.tar.xz
-curl -SLO https://www.kernel.org/pub/linux/kernel/v.6.8/linux-6.8.0.tar.sign
-curl -SLO https://www.kernel.org/pub/linux/kernel/projects/rt/6.8/patch-6.8-rc4-rt4.patch.xz
-curl -SLO https://www.kernel.org/pub/linux/kernel/projects/rt/6.8/patch-6.8-rc4-rt4.patch.sign
+curl -SLO https://www.kernel.org/pub/linux/kernel/v6.8/linux-6.8.0.tar.xz
+curl -SLO https://www.kernel.org/pub/linux/kernel/v6.8/linux-6.8.0.tar.sign
+curl -SLO https://www.kernel.org/pub/linux/kernel/projects/rt/6.8/patch-6.8-rt8.patch.xz
+curl -SLO https://www.kernel.org/pub/linux/kernel/projects/rt/6.8/patch-6.8-rt8.patch.sign
 ```
 
 5. 다운된 파일의 압축해제 : `xz -d *.xz`
