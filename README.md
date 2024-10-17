@@ -124,4 +124,61 @@ Primary key fingerprint: 647F 2865 4894 E3BD 4571  99BE 38DB BDC8 6092 693E`
 
 
 
-### 
+### Compiling the kernel
+1. 이전까지 파일들을 제대로 다운로드 받았다면, source code를 추출할 수 있고 patch를 적용할 수 있다.
+`tar xf linux-*.tar
+cd linux-*/
+patch -p1 < ../patch-*.patch`
+
+2. 다음으로는 현재 부팅되어있는 커널구성을 copy한다. ->> 새로운 real time kernel을 위한 default configulation으로 부터
+  
+3. 새로운 config를 만들 때, 2번의 config를 default로 사용할 수 있다.
+`make olddefconfig
+make menuconfig`
+- 위 명령어 중 `make menuconfig`는 preemption(선점) model을 구성할 수 있는 terminal interface 를 가져온다.
+- 만약 TUIs 보다 GUIs 를 선호하면, use make `xconfig` instead of `make menuconfig`
+
+4. 아래의 과정을 수행
+> General Setup > Preemption Model and select Fully Preemptible Kernel (Real-Time).
+> Cryptographic API > Certificates for signature checking (at the very bottom of the list)
+> Provide system-wide ring of trusted keys > Additional X.509 keys for default system keyring
+
+> Remove the “debian/canonical-certs.pem” from the prompt and press Ok.
+> Save this configuration to .config and exit the TUI.
+
+5. Kernel 컴파일
+- 시간이 오래 소요되므로, 멀티스레딩 옵션 `-j`를 CPU 코어 수로 설정한다.
+  `make -j$(nproc) deb-pkg`
+
+6. 새로 생성된 패키지 설치
+`sudo dpkg -i ../linux-headers-*.deb ../linux-image-*.deb`
+
+
+### Verifying the new kernel
+1. 시스템 재부팅
+  
+2. Grub boot menu에서 새로 설치된 kernel 선택
+
+3. 현재 새로운 Kernel이 사용되고 있는지를 보기 위해 `uname -a` 명령어를 입력
+- 이때 명령어에 대한 결과에는 `PREEMPT RT`이라는 문자열과 이전에 선택했던 version number가 들어가야 한다.
+- 추가로,`/sys/kernel/realtime` should exist and contain the the number `1`.
+
++) 만약 오류가 뜬다면 아래 확인..
+https://frankaemika.github.io/docs/troubleshooting.html#troubleshooting-realtime-kernel
+
+
+### Allow a user to set real-time permissions for its processes
+1. 새로운 커널이 잘 동작하는 경우, 아래 명령어와 같이 그룹과 그룹에 해당하는 유저 이름을 추가한다.
+`sudo addgroup realtime
+sudo usermod -a -G realtime $(whoami)`
+
+2. `/etc/security/limits.conf`의 real time group에 아래의 제한사항을 추가한다.
+`@realtime soft rtprio 99
+@realtime soft priority 99
+@realtime soft memlock 102400
+@realtime hard rtprio 99
+@realtime hard priority 99
+@realtime hard memlock 102400`
+
+
+
