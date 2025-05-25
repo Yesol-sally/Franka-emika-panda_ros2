@@ -51,8 +51,8 @@ controller_interface::return_type PDExampleController::update(
     double derivative = (error - prev_error_.at(i)) / dt;
     double command  = q + Kp * error + Kd * derivative;
 
-    command_interfaces_[i].set_value(command);
-    prev_error_.at(i) = error;
+    command_interfaces_[i].set_value(command); // 명령 인터페이스에 값 설정
+    prev_error_.at(i) = error; // 현재 오차를 이전 오차로 저장
   }
 
   return controller_interface::return_type::OK;

@@ -41,7 +41,8 @@ class PDExampleController : public controller_interface::ControllerInterface {
   bool initialization_flag_{true};
   rclcpp::Time start_time_; // rclcpp::Time 객체로, ROS2의 시간 정보를 저장하는 변수
 
-  // PD 이득
+
+  std::array<double, num_joints> prev_error_{{0.0}};  // 이전 오차 저장
   double Kp{10.0};  // 비례 이득
   double Kd{ 1.0};  // 미분 이득
 
