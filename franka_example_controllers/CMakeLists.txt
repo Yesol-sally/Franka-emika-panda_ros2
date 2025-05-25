@@ -45,7 +45,9 @@ add_library(
         src/joint_velocity_example_controller.cpp
         src/model_example_controller.cpp
         src/motion_generator.cpp
-        src/move_to_start_example_controller.cpp)
+        src/move_to_start_example_controller.cpp
+        src/PD_example_controller.cpp ###추가
+        )
 target_include_directories(
         ${PROJECT_NAME}
         PUBLIC
