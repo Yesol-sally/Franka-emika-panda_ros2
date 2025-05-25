@@ -137,7 +137,8 @@ def generate_launch_description():
         cmd=['ros2', 'control', 'load_controller', '--set-state', 'active', 'PD_example_controller'],
         output='screen'
     )
-    
+
+
     return LaunchDescription([
         load_gripper_launch_argument,
         franka_hand_launch_argument,
@@ -155,7 +156,7 @@ def generate_launch_description():
         RegisterEventHandler(
             event_handler=OnProcessExit(
                 target_action=load_joint_state_broadcaster,
-                # on_exit=[load_joint_position_example_controller],
+                #on_exit=[load_joint_position_example_controller], (기존)
                 on_exit=[PD_example_controller],
             )
         ),
