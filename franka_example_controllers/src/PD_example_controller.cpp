@@ -1,4 +1,4 @@
-#include <franka_example_controllers/PD_example.hpp>
+#include <franka_example_controllers/PD_example_controller.hpp>
 #include <franka_example_controllers/robot_utils.hpp> // 이 파일은 로봇 관련 유틸리티 함수들을 포함하고 있습니다.
 
 #include <cassert>

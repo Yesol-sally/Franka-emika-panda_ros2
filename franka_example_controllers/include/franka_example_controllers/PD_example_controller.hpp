@@ -32,7 +32,7 @@ class PDExampleController : public controller_interface::ControllerInterface {
   std::string arm_id_; // 로봇 팔의 ID를 저장하는 문자열 변수
   bool is_gazebo_{false}; // Gazebo 시뮬레이터에서 실행 중인지 여부를 나타내는 불리언 변수
   std::string robot_description_; // 로봇의 URDF(Universal Robot Description Format) 설명을 저장하는 문자열 변수
-  const int num_joints = 7; // 로봇의 관절 수를 저장하는 상수 변수
+//   const int num_joints = 7; // 로봇의 관절 수를 저장하는 상수 변수
   std::array<double, 7> initial_q_{0, 0, 0, 0, 0, 0, 0}; // 로봇 관절의 초기 위치를 저장하는 배열
   double elapsed_time_ = 0.0;
   double initial_robot_time_ = 0.0;
@@ -42,7 +42,9 @@ class PDExampleController : public controller_interface::ControllerInterface {
   rclcpp::Time start_time_; // rclcpp::Time 객체로, ROS2의 시간 정보를 저장하는 변수
 
 
-  std::array<double, num_joints> prev_error_{{0.0}};  // 이전 오차 저장
+  static constexpr std::size_t num_joints = 7;
+  std::array<double, num_joints> prev_error_{};
+  std::array<double, num_joints> target_q_{};  //타겟 위치 설정
   double Kp{10.0};  // 비례 이득
   double Kd{ 1.0};  // 미분 이득
 
