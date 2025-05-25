@@ -16,7 +16,7 @@ using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface
 // cpp와 hpp의 네임스페이스는 동일해야 한다.
 namespace franka_example_controllers {
 
-class JointPositionExampleController : public controller_interface::ControllerInterface {
+class PDExampleController : public controller_interface::ControllerInterface {
  public:   // → 외부(다른 객체·함수)에서 마음껏 호출·접근할 수 있는 멤버
   [[nodiscard]] controller_interface::InterfaceConfiguration command_interface_configuration()
       const override;

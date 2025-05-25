@@ -11,7 +11,7 @@
 namespace franka_example_controllers { //hpp의 네임스페이스와 동일
 
 controller_interface::InterfaceConfiguration //ROS2의 컨트롤러 인터페이스에서 사용되는 구성 정보를 나타냅니다.
-JointPositionExampleController::command_interface_configuration() const {
+PDExampleController::command_interface_configuration() const {
   controller_interface::InterfaceConfiguration config;
   config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
   for (int i = 1; i <= num_joints; ++i) {
@@ -21,7 +21,7 @@ JointPositionExampleController::command_interface_configuration() const {
 }
 
 controller_interface::InterfaceConfiguration
-JointPositionExampleController::state_interface_configuration() const {
+PDExampleController::state_interface_configuration() const {
   controller_interface::InterfaceConfiguration config;
   config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
   for (int i = 1; i <= num_joints; ++i) {
@@ -30,7 +30,8 @@ JointPositionExampleController::state_interface_configuration() const {
   return config;
 }
 
-controller_interface::return_type JointPositionExampleController::update(
+//변경부분
+controller_interface::return_type PDExampleController::update(
     const rclcpp::Time& /*time*/,
     const rclcpp::Duration& period) {
   // 1) 초기화: 기준 위치와 이전 오차 저장
@@ -57,7 +58,7 @@ controller_interface::return_type JointPositionExampleController::update(
   return controller_interface::return_type::OK;
 }
 
-CallbackReturn JointPositionExampleController::on_init() {
+CallbackReturn PDExampleController::on_init() {
   try {
     auto_declare<bool>("gazebo", false);
     auto_declare<std::string>("robot_description", "");
@@ -68,7 +69,7 @@ CallbackReturn JointPositionExampleController::on_init() {
   return CallbackReturn::SUCCESS;
 }
 
-CallbackReturn JointPositionExampleController::on_configure(
+CallbackReturn PDExampleController::on_configure(
     const rclcpp_lifecycle::State& /*previous_state*/) {
   is_gazebo_ = get_node()->get_parameter("gazebo").as_bool();
 
@@ -88,7 +89,7 @@ CallbackReturn JointPositionExampleController::on_configure(
   return CallbackReturn::SUCCESS;
 }
 
-CallbackReturn JointPositionExampleController::on_activate(
+CallbackReturn PDExampleController::on_activate(
     const rclcpp_lifecycle::State& /*previous_state*/) {
   initialization_flag_ = true;
   return CallbackReturn::SUCCESS;
@@ -98,5 +99,5 @@ CallbackReturn JointPositionExampleController::on_activate(
 
 #include "pluginlib/class_list_macros.hpp"
 // NOLINTNEXTLINE
-PLUGINLIB_EXPORT_CLASS(franka_example_controllers::JointPositionExampleController,
+PLUGINLIB_EXPORT_CLASS(franka_example_controllers::PDExampleController,
                        controller_interface::ControllerInterface)
