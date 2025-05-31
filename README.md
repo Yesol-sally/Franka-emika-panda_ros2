@@ -6,9 +6,9 @@ https://frankaemika.github.io/docs/overview.html
 
 ## Install
 https://frankaemika.github.io/docs/installation_linux.html#installation-build-from-source
-- Ubuntu 20.04 LTS
+- Ubuntu 22.04 LTS
 - ROS2 Humble
-- Gazebo Garden
+- Gazebo Fortress
 https://gazebosim.org/docs/fortress/getstarted/
 
 ## Overview
