@@ -8,8 +8,8 @@ https://frankaemika.github.io/docs/overview.html
 https://frankaemika.github.io/docs/installation_linux.html#installation-build-from-source
 - Ubuntu 22.04 LTS
 - ROS2 Humble
-- Gazebo Harmonic 
-https://gazebosim.org/docs/fortress/getstarted/
+- Gazebo Fortress
+https://gazebosim.org/docs/fortress/ros_installation/
 
 ## Overview
 - `Franka Control Interface(FCI)`
