@@ -8,7 +8,7 @@ https://frankaemika.github.io/docs/overview.html
 https://frankaemika.github.io/docs/installation_linux.html#installation-build-from-source
 - Ubuntu 22.04 LTS
 - ROS2 Humble
-- Gazebo Fortress
+- Gazebo Harmonic 
 https://gazebosim.org/docs/fortress/getstarted/
 
 ## Overview
