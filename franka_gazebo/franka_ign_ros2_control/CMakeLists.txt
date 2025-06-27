@@ -58,7 +58,10 @@ endif()
 find_package(ignition-plugin1 REQUIRED)
 set(IGN_PLUGIN_VER ${ignition-plugin1_VERSION_MAJOR})
 
-include_directories(include)
+include_directories(include
+${franka_ign_ros2_control_INCLUDE_DIRS} #추가!!!!
+
+)
 
 add_library(${PROJECT_NAME}-system SHARED
   src/ign_ros2_control_plugin.cpp

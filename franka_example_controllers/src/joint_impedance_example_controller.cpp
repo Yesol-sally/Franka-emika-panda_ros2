@@ -21,6 +21,8 @@
 #include <string>
 
 #include <Eigen/Eigen>
+#include "franka_example_controllers/kdl_model_param.hpp" //추가
+
 
 namespace franka_example_controllers {
 
@@ -52,6 +54,37 @@ controller_interface::return_type JointImpedanceExampleController::update(
   updateJointStates();
   Vector7d q_goal = initial_q_;
   elapsed_time_ = elapsed_time_ + period.seconds();
+
+  //############### q_, dq_ 출력 ##################
+  std::cout << "q_: " << q_.transpose() << std::endl;
+  std::cout << "dq_: " << dq_.transpose() << std::endl;
+  //###############################################
+
+
+  //############################################### 
+  // KDL 기반 모델 파라미터 계산
+  KDL::JntArray q_kdl(num_joints), dq_kdl(num_joints);
+  for (int i = 0; i < num_joints; ++i) {
+    q_kdl(i) = q_(i);
+    dq_kdl(i) = dq_(i);
+  }
+  KDL::JntSpaceInertiaMatrix mass(num_joints);
+  KDL::JntArray coriolis(num_joints), gravity(num_joints);
+  //출력
+  if (kdl_model_param_ && kdl_model_param_->computeDynamics(q_kdl, dq_kdl, mass, coriolis, gravity)) {
+    std::cout << "Mass matrix diagonal: ";
+    for (int i = 0; i < num_joints; ++i) std::cout << mass(i, i) << " ";
+    std::cout << std::endl;
+    std::cout << "Coriolis: ";
+    for (int i = 0; i < num_joints; ++i) std::cout << coriolis(i) << " ";
+    std::cout << std::endl;
+    std::cout << "Gravity: ";
+    for (int i = 0; i < num_joints; ++i) std::cout << gravity(i) << " ";
+    std::cout << std::endl;
+  }
+  //###############################################
+
+
 
   double delta_angle = M_PI / 8.0 * (1 - std::cos(M_PI / 2.5 * elapsed_time_));
   q_goal(3) += delta_angle;
@@ -119,6 +152,14 @@ CallbackReturn JointImpedanceExampleController::on_configure(
   } else {
     RCLCPP_ERROR(get_node()->get_logger(), "Failed to get robot_description parameter.");
   }
+
+//####################KDL 기반 로봇 동역학 모델 객체 초기화####################
+  kdl_model_param_ = std::make_unique<KDLModelParam>(robot_description_, "fr3_link0", "fr3_link7");
+  if (!kdl_model_param_->isValid()) {
+    RCLCPP_ERROR(get_node()->get_logger(), "Failed to initialize KDL model param.");
+    return CallbackReturn::FAILURE;
+  }
+//########################################################################
 
   arm_id_ = robot_utils::getRobotNameFromDescription(robot_description_, get_node()->get_logger());
 

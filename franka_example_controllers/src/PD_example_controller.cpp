@@ -83,7 +83,6 @@ controller_interface::return_type PDExampleController::update(
   return controller_interface::return_type::OK;
 }
 
-
 CallbackReturn PDExampleController::on_init() {
   try {
     auto_declare<std::string>("arm_id", "");

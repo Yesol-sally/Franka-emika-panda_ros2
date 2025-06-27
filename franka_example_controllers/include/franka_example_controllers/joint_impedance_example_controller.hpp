@@ -1,32 +1,21 @@
-// Copyright (c) 2023 Franka Robotics GmbH
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 #pragma once
 
 #include <string>
+#include <memory>  // std::unique_ptr를 위해 추가
 
 #include <Eigen/Eigen>
 #include <controller_interface/controller_interface.hpp>
 #include <rclcpp/rclcpp.hpp>
 
+// 전방 선언 추가
+namespace franka_example_controllers {
+class KDLModelParam;
+}
+
 using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 
 namespace franka_example_controllers {
 
-/**
- * The joint impedance example controller moves joint 4 and 5 in a very compliant periodic movement.
- */
 class JointImpedanceExampleController : public controller_interface::ControllerInterface {
  public:
   using Vector7d = Eigen::Matrix<double, 7, 1>;
@@ -52,6 +41,9 @@ class JointImpedanceExampleController : public controller_interface::ControllerI
   Vector7d d_gains_;
   double elapsed_time_{0.0};
   void updateJointStates();
+
+  // KDL 모델 파라미터 계산 객체
+  std::unique_ptr<KDLModelParam> kdl_model_param_;
 };
 
 }  // namespace franka_example_controllers
