@@ -23,7 +23,6 @@
 #include <Eigen/Eigen>
 #include "franka_example_controllers/kdl_model_param.hpp" //추가
 
-
 namespace franka_example_controllers {
 
 controller_interface::InterfaceConfiguration
@@ -72,9 +71,16 @@ controller_interface::return_type JointImpedanceExampleController::update(
   KDL::JntArray coriolis(num_joints), gravity(num_joints);
   //출력
   if (kdl_model_param_ && kdl_model_param_->computeDynamics(q_kdl, dq_kdl, mass, coriolis, gravity)) {
-    std::cout << "Mass matrix diagonal: ";
-    for (int i = 0; i < num_joints; ++i) std::cout << mass(i, i) << " ";
+    // std::cout << "Mass matrix diagonal: ";
+    // for (int i = 0; i < num_joints; ++i) std::cout << mass(i, i) << " ";
+    // std::cout << std::endl;
+    std::cout << "Mass matrix: ";
+    for (int i = 0; i < num_joints; ++i) {
+    for (int j = 0; j < num_joints; ++j) {
+      std::cout << mass(i, j) << " ";
+    }
     std::cout << std::endl;
+  }
     std::cout << "Coriolis: ";
     for (int i = 0; i < num_joints; ++i) std::cout << coriolis(i) << " ";
     std::cout << std::endl;
@@ -82,9 +88,46 @@ controller_interface::return_type JointImpedanceExampleController::update(
     for (int i = 0; i < num_joints; ++i) std::cout << gravity(i) << " ";
     std::cout << std::endl;
   }
+  // 자코비안 계산 (6x7 행렬)
+  KDL::Jacobian jacobian(num_joints);
+  if (kdl_model_param_ && kdl_model_param_->computeJacobian(q_kdl, jacobian)) {
+    std::cout << "\nJacobian matrix (6x7):" << std::endl;
+    for (int i = 0; i < 6; ++i) {
+      for (int j = 0; j < num_joints; ++j) {
+        std::cout << jacobian(i, j) << "\t";
+      }
+      std::cout << std::endl;
+    }
+  //FK 계산
+    KDL::Frame end_effector_pose;
+  if (kdl_model_param_ && kdl_model_param_->computeForwardKinematics(q_kdl, end_effector_pose)) {
+    std::cout << "\n=== Forward Kinematics Results ===" << std::endl;
+    
+    // 엔드이펙터 위치 출력 (x, y, z)
+    std::cout << "End-effector position (x, y, z): "
+              << end_effector_pose.p[0] << ", "
+              << end_effector_pose.p[1] << ", "
+              << end_effector_pose.p[2] << std::endl;
+    
+    // 엔드이펙터 자세 출력 (Roll, Pitch, Yaw)
+    double roll, pitch, yaw;
+    end_effector_pose.M.GetRPY(roll, pitch, yaw);
+    std::cout << "End-effector orientation (RPY): "
+              << roll << ", " << pitch << ", " << yaw << std::endl;
+    
+    // 회전 행렬 출력 (3x3)
+    std::cout << "End-effector rotation matrix (3x3):" << std::endl;
+    for (int i = 0; i < 3; ++i) {
+      for (int j = 0; j < 3; ++j) {
+        std::cout << end_effector_pose.M(i, j) << "\t";
+      }
+      std::cout << std::endl;
+    }
+  } else {
+    std::cout << "Forward kinematics computation failed!" << std::endl;
+  }
+  }
   //###############################################
-
-
 
   double delta_angle = M_PI / 8.0 * (1 - std::cos(M_PI / 2.5 * elapsed_time_));
   q_goal(3) += delta_angle;

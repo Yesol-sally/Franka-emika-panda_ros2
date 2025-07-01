@@ -18,7 +18,9 @@
   <depend>rclcpp_lifecycle</depend>
   <depend>sensor_msgs</depend>
   <depend>std_srvs</depend>
-
+  <depend>tf2_eigen_kdl</depend>
+  <depend>tf2_kdl</depend>
+  <depend>tf2_eigen</depend>
 
   <test_depend>ament_cmake</test_depend>
   <test_depend>ament_cmake_clang_format</test_depend>

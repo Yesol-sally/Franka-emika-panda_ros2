@@ -28,6 +28,10 @@ find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(Eigen3 REQUIRED)
+find_package(tf2_kdl       REQUIRED)
+find_package(tf2_eigen     REQUIRED)
+find_package(tf2_eigen_kdl REQUIRED)
+
 
 add_library(
         ${PROJECT_NAME}
@@ -68,6 +72,9 @@ ament_target_dependencies(
         rclcpp
         rclcpp_lifecycle
         std_srvs
+        tf2_kdl
+        tf2_eigen
+        tf2_eigen_kdl        
 )
 
 pluginlib_export_plugin_description_file(
@@ -97,6 +104,9 @@ if(BUILD_TESTING)
     find_package(ament_cmake_gmock REQUIRED)
     find_package(controller_manager REQUIRED)
     find_package(ros2_control_test_assets REQUIRED)
+    find_package(tf2_kdl       REQUIRED)
+    find_package(tf2_eigen     REQUIRED)
+    find_package(tf2_eigen_kdl REQUIRED)
 
     set(CPP_DIRECTORIES src include)
     ament_clang_format(CONFIG_FILE ../.clang-format ${CPP_DIRECTORIES})
@@ -152,5 +162,8 @@ ament_export_dependencies(
         rclcpp_lifecycle
         hardware_interface
         moveit_core
+        tf2_kdl
+        tf2_eigen
+        tf2_eigen_kdl        
 )
 ament_package()

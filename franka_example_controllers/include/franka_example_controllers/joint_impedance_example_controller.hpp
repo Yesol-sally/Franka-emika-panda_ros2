@@ -6,6 +6,9 @@
 #include <Eigen/Eigen>
 #include <controller_interface/controller_interface.hpp>
 #include <rclcpp/rclcpp.hpp>
+#include <tf2_eigen_kdl/tf2_eigen_kdl.hpp> //KDL 자료형 변환
+#include <kdl/chainfksolverpos_recursive.hpp> // 추가된 헤더
+
 
 // 전방 선언 추가
 namespace franka_example_controllers {
