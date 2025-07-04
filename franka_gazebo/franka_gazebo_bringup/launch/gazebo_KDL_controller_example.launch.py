@@ -133,8 +133,8 @@ def generate_launch_description():
     #     output='screen'
     # )
 
-    PD_example_controller = ExecuteProcess(
-        cmd=['ros2', 'control', 'load_controller', '--set-state', 'active', 'PD_example_controller'],
+    ForcePDController = ExecuteProcess(
+        cmd=['ros2', 'control', 'load_controller', '--set-state', 'active', 'force_pd_controller'],
         output='screen'
     )
 
@@ -157,7 +157,7 @@ def generate_launch_description():
             event_handler=OnProcessExit(
                 target_action=load_joint_state_broadcaster,
                 #on_exit=[load_joint_position_example_controller], (기존)
-                on_exit=[PD_example_controller],
+                on_exit=[ForcePDController],
             )
         ),
         Node(

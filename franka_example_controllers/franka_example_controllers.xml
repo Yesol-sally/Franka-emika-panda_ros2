@@ -83,4 +83,10 @@
             The PD example controller.
         </description>
     </class>
+    <class name="franka_example_controllers/ForcePDController"
+           type="franka_example_controllers::ForcePDController" base_class_type="controller_interface::ControllerInterface">
+        <description>
+            The KDL with PD example controller.
+        </description>
+    </class>    
 </library>

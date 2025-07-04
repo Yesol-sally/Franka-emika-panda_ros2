@@ -117,8 +117,8 @@ controller_interface::return_type JointImpedanceExampleController::update(
     
     // 회전 행렬 출력 (3x3)
     std::cout << "End-effector rotation matrix (3x3):" << std::endl;
-    for (int i = 0; i < 3; ++i) {
-      for (int j = 0; j < 3; ++j) {
+    for (int i = 0; i < 7; ++i) {
+      for (int j = 0; j < 7; ++j) {
         std::cout << end_effector_pose.M(i, j) << "\t";
       }
       std::cout << std::endl;

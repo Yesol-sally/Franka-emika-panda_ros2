@@ -51,6 +51,7 @@ add_library(
         src/motion_generator.cpp
         src/move_to_start_example_controller.cpp
         src/PD_example_controller.cpp ###추가
+        src/force_pd_controller.cpp ###추가
         src/kdl_model_param.cpp ### 추가
         )
 target_include_directories(
