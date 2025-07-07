@@ -113,6 +113,7 @@ def generate_launch_description():
         output='screen',
     )
 
+
     # Visualize in RViz
     rviz_file = os.path.join(get_package_share_directory('franka_description'), 'rviz',
                              'visualize_franka.rviz')
@@ -169,3 +170,5 @@ def generate_launch_description():
                  'rate': 30}],
         ),
     ])
+
+

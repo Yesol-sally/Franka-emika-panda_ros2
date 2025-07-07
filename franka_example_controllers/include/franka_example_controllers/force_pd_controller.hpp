@@ -23,6 +23,8 @@
 #include <kdl/chainfksolverpos_recursive.hpp>  // FK-solver
 #include <kdl/tree.hpp>                        // KDL::Tree
 #include <kdl_parser/kdl_parser.hpp>           // kdl_parser::treeFromString
+#include <kdl/chainjnttojacdotsolver.hpp>
+#include <kdl/jacobian.hpp>
 // #include <kdl/frames.hpp>
 
 //added
@@ -78,6 +80,10 @@ class ForcePDController : public controller_interface::ControllerInterface {
   void getKDLmodel();
   Eigen::Matrix<double, 6,7> getCrtAnalyticJacobian(KDL::JntArray q_in_form_of_kdl);
 
+  // Jacobian_dot
+  Eigen::Matrix<double,6,7> getCrtAnalyticJacobianDot(KDL::JntArray q, KDL::JntArray qdot);
+  std::shared_ptr<KDL::ChainJntToJacDotSolver> jdot_solver_; 
+
    // KDL 모델 파라미터 계산 객체
   std::unique_ptr<KDLModelParam> kdl_model_param_; // 추가된 부분
   KDL::Chain kdl_chain_;
@@ -86,7 +92,7 @@ class ForcePDController : public controller_interface::ControllerInterface {
   Eigen::Quaterniond ee_ori_quat_;
 //   Eigen::EulerAngles<double, Eigen::EulerSystemZYZ> ee_ori_eulerZYZ_;
   Eigen::EulerAngles<double, Eigen::EulerSystemZYX> ee_ori_eulerZYX_;
-  
+
   Eigen::Matrix3d ee_ori_rot_;
 
   double euler_phi {0.0};

@@ -132,13 +132,13 @@ controller_interface::return_type ForcePDController::update(
   //###########################################
   KDL::JntArray q_initial_kdl(7);
   KDL::Frame ee_initial_frame_;
-  // q_initial_kdl(0) = 0.306;
-  // q_initial_kdl(1) = 0.0;
-  // q_initial_kdl(2) = 0.695; 
-  // q_initial_kdl(3) = -3.138;
-  // q_initial_kdl(4) = 3.138;
-  // q_initial_kdl(5) = 0.789;
-  // q_initial_kdl(6) = 0.643378;
+  // cart_pos_goal(0) = 0.306;
+  // cart_pos_goal(1) = 0.0;
+  // cart_pos_goal(2) = 0.695; 
+  // cart_pos_goal(3) = -3.138;
+  // cart_pos_goal(4) = 3.138;
+  // cart_pos_goal(5) = 0.789;
+  // cart_pos_goal(6) = 0.643378;
   
   fk_pos_solver_->JntToCart(q_kdl, ee_initial_frame_);
 
@@ -150,6 +150,10 @@ controller_interface::return_type ForcePDController::update(
   // cart_pos_goal(0) = ee_initial_frame_.p.x();
   // cart_pos_goal(1) = ee_initial_frame_.p.y();
   // cart_pos_goal(2) = ee_initial_frame_.p.z();
+  cart_pos_goal(0) = 0.1;
+  cart_pos_goal(1) = 0;
+  cart_pos_goal(2) = 0;
+
   // // ZYZ 오일러 각 추출
   double z, y, x;
   // ee_initial_frame_.M.GetEulerZYZ(z1, y, z2); 
@@ -157,10 +161,6 @@ controller_interface::return_type ForcePDController::update(
   cart_pos_goal(3) = z;
   cart_pos_goal(4) = y;
   cart_pos_goal(5) = x;
-
-  cart_pos_goal(0) = 0.3;
-  cart_pos_goal(1) = 0.4;
-  cart_pos_goal(2) = 0.5;
   // cart_pos_goal(3) = 0.1745;
   // cart_pos_goal(4) = 0.3491;
   // cart_pos_goal(5) = 0.5236;
@@ -196,6 +196,7 @@ std::cout << "=======cart_pos_error=======\n"
   // tau_total = tau_total + gravity_eigen;
   // tau_total = gravity_eigen; //중력보상으로만 동작해보기
 //#################중력보상 추가
+
   for (int i = 0; i < num_joints; ++i) {
     command_interfaces_[i].set_value(tau_total(i));
   }
@@ -355,18 +356,14 @@ void ForcePDController::updateJointStates() {
 
 
  Eigen::Matrix<double, 6,7> ForcePDController::getCrtAnalyticJacobian(KDL::JntArray q_in_form_of_kdl){
-    // geonetric 자코비안 계산 (6x7 행렬)
-  //###########################################
+  // geonetric 자코비안 계산 (6x7 행렬)
     KDL::Jacobian jac_kdl(num_joints);
     kdl_model_param_->computeJacobian(q_in_form_of_kdl, jac_kdl);
 
     Eigen::Map<const Eigen::Matrix<double, 6, 7, Eigen::RowMajor>> jac_eigen(jac_kdl.data.data());
-    
     // std::cout << "jac" << jac_eigen << std::endl;   
-    //###########################################
 
     //geometric <> analytic jacobian conversion
-    //###########################################
     sphi = std::sin(euler_phi),  cphi = std::cos(euler_phi);
     stheta = std::sin(euler_theta), ctheta = std::cos(euler_theta);
 
@@ -387,6 +384,30 @@ void ForcePDController::updateJointStates() {
     return jac_ana_eigen;
   //###########################################
  }
+
+// // analytic Jacobian time-derivative
+// Eigen::Matrix<double,6,7> ForcePDController::getCrtAnalyticJacobianDot(KDL::JntArray q,KDL::JntArray qdot){
+//   const unsigned int n = q.rows();
+
+//   // 1) geometric Jacobian derivative (6×7)
+//   KDL::Jacobian jacdot_kdl(num_joi nts);
+//   jdot_solver_->JntToJacDot(q, qdot, jacdot_kdl);
+//   Eigen::Map<const Eigen::Matrix<double,6,7,Eigen::RowMajor>> jacdot_eigen(jacdot_kdl.data.data());
+  
+//   //geometric <> analytic jacobian conversion
+//   sphi_   = std::sin(euler_phi_);   cphi_   = std::cos(euler_phi_);
+//   stheta_ = std::sin(euler_theta_);   ctheta_ = std::cos(euler_theta_);
+
+//   // T_ZYX_ 구성
+//   T_ZYX_ << 0,    -sphi_,       cphi_*ctheta_,
+//             0,     cphi_,       sphi_,
+//             1,        0,         -stheta_;
+//   // analytic 변환 블록에 삽입
+//   T_A_ZYX_.bottomRightCorner<3,3>() = T_ZYX_;
+//   Eigen::Matrix<double,6,7> jacdot_ana = T_A_ZYX_.inverse() * jacdot_eigen;
+
+//   return jacdot_ana;
+// }
 
 //##########Null space controller#############
 // Null-space controller implementation
