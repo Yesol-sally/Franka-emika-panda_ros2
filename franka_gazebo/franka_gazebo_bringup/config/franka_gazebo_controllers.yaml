@@ -23,19 +23,33 @@ controller_manager:
 force_pd_controller:
   ros__parameters:
     k_gains:
-      - 5.0  # X
-      - 5.0  # Y
-      - 5.0  # Z
-      - 5.0  # Roll
-      - 5.0  # Pitch
-      - 5.0  # Yaw
+      - 0.5
+      - 0.5
+      - 0.5
+      - 0.01
+      - 0.01
+      - 0.01
     d_gains:
-      - 1.0   # X
-      - 1.0   # Y
-      - 1.0   # Z
-      - 1.0   # Roll
-      - 1.0   # Pitch
-      - 1.0   # Yaw
+      - 0.1
+      - 0.1
+      - 0.1
+      - 0.001
+      - 0.001
+      - 0.001
+    # k_gains:
+    #   - 1.0
+    #   - 1.0
+    #   - 1.0
+    #   - 0.5
+    #   - 0.5
+    #   - 0.5
+    # d_gains:
+    #   - 0.1
+    #   - 0.1
+    #   - 0.1
+    #   - 0.001
+    #   - 0.001
+    #   - 0.001
 
 PD_example_controller:
   ros__parameters:

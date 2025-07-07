@@ -31,7 +31,7 @@ find_package(Eigen3 REQUIRED)
 find_package(tf2_kdl       REQUIRED)
 find_package(tf2_eigen     REQUIRED)
 find_package(tf2_eigen_kdl REQUIRED)
-
+find_package(Eigen3 REQUIRED) 
 
 add_library(
         ${PROJECT_NAME}

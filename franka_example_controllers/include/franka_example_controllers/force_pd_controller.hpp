@@ -25,8 +25,7 @@
 #include <kdl_parser/kdl_parser.hpp>           // kdl_parser::treeFromString
 #include <kdl/chainjnttojacdotsolver.hpp>
 #include <kdl/jacobian.hpp>
-// #include <kdl/frames.hpp>
-
+#include <kdl/frames.hpp>
 //added
 
 using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
@@ -81,8 +80,11 @@ class ForcePDController : public controller_interface::ControllerInterface {
   Eigen::Matrix<double, 6,7> getCrtAnalyticJacobian(KDL::JntArray q_in_form_of_kdl);
 
   // Jacobian_dot
-  Eigen::Matrix<double,6,7> getCrtAnalyticJacobianDot(KDL::JntArray q, KDL::JntArray qdot);
-  std::shared_ptr<KDL::ChainJntToJacDotSolver> jdot_solver_; 
+  /// analytic Jacobian time-derivative 계산
+  // Eigen::Matrix<double,6,7> getCrtAnalyticJacobianDot(
+  // const KDL::JntArray& q,
+  // const KDL::JntArray& qdot);  
+  // std::shared_ptr<KDL::ChainJntToJacDotSolver> jdot_solver_; 
 
    // KDL 모델 파라미터 계산 객체
   std::unique_ptr<KDLModelParam> kdl_model_param_; // 추가된 부분
@@ -92,11 +94,10 @@ class ForcePDController : public controller_interface::ControllerInterface {
   Eigen::Quaterniond ee_ori_quat_;
 //   Eigen::EulerAngles<double, Eigen::EulerSystemZYZ> ee_ori_eulerZYZ_;
   Eigen::EulerAngles<double, Eigen::EulerSystemZYX> ee_ori_eulerZYX_;
-
   Eigen::Matrix3d ee_ori_rot_;
 
   double euler_phi {0.0};
-  double euler_theta {0.0};  
+  double euler_theta {0.0};
   double euler_psi {0.0};  
   double sphi, cphi, stheta, ctheta;
 //   Eigen::Matrix3d T_ZYZ;
@@ -112,6 +113,8 @@ class ForcePDController : public controller_interface::ControllerInterface {
       const Eigen::Matrix<double, 7, 1>& dq,
       const Eigen::Matrix<double, 6, 7>& jac_ana,
       const Eigen::Matrix<double, 7, 1>& K0);
-};
 
+  int matrixRank(const Eigen::MatrixXd & M, double tol = -1.0); //rank 확인용 함수
+};
+  Eigen::VectorXd initial_q_;   // activate 시점의 관절 위치 저장
 }  // namespace franka_example_controllers

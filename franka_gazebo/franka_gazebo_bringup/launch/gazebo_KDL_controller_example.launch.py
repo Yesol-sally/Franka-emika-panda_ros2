@@ -138,7 +138,22 @@ def generate_launch_description():
         cmd=['ros2', 'control', 'load_controller', '--set-state', 'active', 'force_pd_controller'],
         output='screen'
     )
-
+    # --- bag record 노드 추가 ---
+    bag_record = ExecuteProcess(
+        cmd=[
+            'ros2', 'bag', 'record',
+            # 기록할 토픽만 선택하고 싶으면 -a 대신 '/joint_states' 등 직접 명시하세요
+            '-a',
+            # 저장 디렉토리 및 파일명 지정
+            '-o', os.path.join(
+                get_package_share_directory('franka_description'),
+                'bags',
+                'franka_run_' + LaunchConfiguration('arm_id').perform({})  # arm_id 추가
+            )
+        ],
+        output='screen',
+        shell=False
+    )
 
     return LaunchDescription([
         load_gripper_launch_argument,
@@ -167,8 +182,9 @@ def generate_launch_description():
             name='joint_state_publisher',
             parameters=[
                 {'source_list': ['joint_states'],
-                 'rate': 30}],
+                 'rate': 30}], 
         ),
+        bag_record,
     ])
 
 
