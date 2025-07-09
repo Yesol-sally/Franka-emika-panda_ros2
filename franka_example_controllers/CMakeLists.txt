@@ -33,6 +33,9 @@ find_package(tf2_eigen     REQUIRED)
 find_package(tf2_eigen_kdl REQUIRED)
 find_package(Eigen3 REQUIRED) 
 
+find_package(geometry_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
+
 add_library(
         ${PROJECT_NAME}
         SHARED
@@ -75,7 +78,11 @@ ament_target_dependencies(
         std_srvs
         tf2_kdl
         tf2_eigen
-        tf2_eigen_kdl        
+        tf2_eigen_kdl    
+        
+        rclcpp
+        geometry_msgs
+        std_msgs            
 )
 
 pluginlib_export_plugin_description_file(
@@ -142,6 +149,7 @@ if(BUILD_TESTING)
     ament_add_gmock(${PROJECT_NAME}_move_to_start_test test/test_move_to_start_example_controller.cpp)
     target_include_directories(${PROJECT_NAME}_move_to_start_test PRIVATE include)
     target_link_libraries(${PROJECT_NAME}_move_to_start_test ${PROJECT_NAME})
+
 
     if(CHECK_TIDY)
         find_package(ament_cmake_clang_tidy REQUIRED)

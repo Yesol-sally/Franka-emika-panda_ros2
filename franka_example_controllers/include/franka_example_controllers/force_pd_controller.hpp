@@ -18,7 +18,6 @@
 #include <franka_semantic_components/franka_cartesian_pose_interface.hpp>
 
 #include <franka_example_controllers/kdl_model_param.hpp>
-// joint_impedance_example_controller.hpp (또는 .cpp 상단)
 #include <kdl/chain.hpp>
 #include <kdl/chainfksolverpos_recursive.hpp>  // FK-solver
 #include <kdl/tree.hpp>                        // KDL::Tree
@@ -26,7 +25,11 @@
 #include <kdl/chainjnttojacdotsolver.hpp>
 #include <kdl/jacobian.hpp>
 #include <kdl/frames.hpp>
-//added
+
+#include <rclcpp/rclcpp.hpp>
+#include <geometry_msgs/msg/point_stamped.hpp>
+#include <std_msgs/msg/float64_multi_array.hpp>
+
 
 using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 
@@ -47,22 +50,17 @@ class ForcePDController : public controller_interface::ControllerInterface {
   CallbackReturn on_init() override;
   CallbackReturn on_configure(const rclcpp_lifecycle::State& previous_state) override;
   CallbackReturn on_activate(const rclcpp_lifecycle::State& previous_state) override;
-    // added 
-  //CallbackReturn on_deactivate(const rclcpp_lifecycle::State& previous_state) override;
-  // added
   using Vector6d = Eigen::Matrix<double, 6, 1>;
 
+  // Publishers for bag recording
+  rclcpp::Publisher<geometry_msgs::msg::PointStamped>::SharedPtr ee_position_pub_;
+  rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr ee_orientation_pub_;
+  rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr cart_pos_err_pub_;
+  rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr tau_total_pub_;
+  rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr cart_goal_pub_;
+
+
  private:
-  // //added
-  // std::unique_ptr<franka_semantic_components::FrankaCartesianPoseInterface> franka_cartesian_pose_;
-  // void printCartesianStates();
-  // //added
-
-  // Eigen::Quaterniond orientation_;
-  // // Eigen::Vector3d position_;
-  // const bool k_elbow_activated_{false};
-  // bool initialization_flag_{true};
-
   std::string arm_id_;
   std::string robot_description_;
   const int num_joints = 7;
@@ -115,6 +113,6 @@ class ForcePDController : public controller_interface::ControllerInterface {
       const Eigen::Matrix<double, 7, 1>& K0);
 
   int matrixRank(const Eigen::MatrixXd & M, double tol = -1.0); //rank 확인용 함수
+  double wrapToPi(double rad);
 };
-  Eigen::VectorXd initial_q_;   // activate 시점의 관절 위치 저장
 }  // namespace franka_example_controllers

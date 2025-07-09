@@ -29,6 +29,9 @@
 #include <kdl/frames.hpp>
 #include <kdl/jntspaceinertiamatrix.hpp>
 
+#include <geometry_msgs/msg/point_stamped.hpp>  // Publishers for bag recording
+#include <std_msgs/msg/float64_multi_array.hpp>  // Publishers for bag recording
+#include <rclcpp/rclcpp.hpp>  
 
 namespace franka_example_controllers {
 
@@ -70,7 +73,7 @@ controller_interface::return_type ForcePDController::update(
   //   std::tie(orientation_, position_) =
   //       franka_cartesian_pose_->getCurrentOrientationAndTranslation();
 
-  //   initialization_flag_ = false;
+    // initialization_flag_ = false;
   // }
 
   // printCartesianStates();    
@@ -107,23 +110,52 @@ controller_interface::return_type ForcePDController::update(
     //           << ee_frame_.p.x() << ", "
     //           << ee_frame_.p.y() << ", "
     //           << ee_frame_.p.z() << "]  ";
+// std::cout << "EE Frame:\n"
+//           << "(0,0) = " << ee_frame_.M(0,0) << "  "
+//           << "(0,1) = " << ee_frame_.M(0,1) << "  "
+//           << "(0,2) = " << ee_frame_.M(0,2) << "\n"
+//           << "(1,0) = " << ee_frame_.M(1,0) << "  "
+//           << "(1,1) = " << ee_frame_.M(1,1) << "  "
+//           << "(1,2) = " << ee_frame_.M(1,2) << "\n"
+//           << "(2,0) = " << ee_frame_.M(2,0) << "  "
+//           << "(2,1) = " << ee_frame_.M(2,1) << "  "
+//           << "(2,2) = " << ee_frame_.M(2,2) << std::endl;
 
+// 이부분은 왜 넣은거지
     tf2::quaternionKDLToEigen(ee_frame_.M, ee_ori_quat_);
-    
     ee_ori_rot_ = ee_ori_quat_.toRotationMatrix();
 
     // ee_ori_eulerZYZ_ = Eigen::EulerAngles<double, Eigen::EulerSystemZYZ>(ee_ori_rot_);
-
     // euler_phi  = ee_ori_eulerZYZ_.alpha() * 180.0 / M_PI;  // X축
     // euler_theta = ee_ori_eulerZYZ_.beta() * 180.0 / M_PI;   // Y축
     // euler_psi   = ee_ori_eulerZYZ_.gamma() * 180.0 / M_PI;  // Z축
+
+    // Eigen::Matrix3d R0;
+    // R0 << ee_frame_.M(0,0), ee_frame_.M(0,1), ee_frame_.M(0,2),
+    //       ee_frame_.M(1,0), ee_frame_.M(1,1), ee_frame_.M(1,2),
+    //       ee_frame_.M(2,0), ee_frame_.M(2,1), ee_frame_.M(2,2);
+
+    // // 3a) Eigen의 eulerAngles(2,1,0) 사용  ──────────────────────────────
+    // Eigen::Vector3d eulerZYX = R0.eulerAngles(2, 1, 0);  // [Z, Y, X] 순
+    // euler_phi = eulerZYX[0];
+    // euler_theta = eulerZYX[1];
+    // euler_psi = eulerZYX[2];
+
+    // std::cout << "Eulerangle" << eulerZYX[0] << ", "
+    // << eulerZYX[1] << ", " << eulerZYX[2] << std::endl;
+    // ee_ori_eulerZYX_ = Eigen::EulerAngles<double, Eigen::EulerSystemZYX>(R0);
+
+    
     ee_ori_eulerZYX_ = Eigen::EulerAngles<double, Eigen::EulerSystemZYX>(ee_ori_rot_);
-
-    euler_phi  = ee_ori_eulerZYX_.alpha();   // X축
+    euler_phi  = ee_ori_eulerZYX_.alpha();   // Z축
     euler_theta = ee_ori_eulerZYX_.beta();   // Y축
-    euler_psi   = ee_ori_eulerZYX_.gamma();  // Z축
+    euler_psi   = ee_ori_eulerZYX_.gamma();  // X축
 
-    // std::cout << "Eulerangle" << std::endl;
+    euler_phi   = wrapToPi(euler_phi);
+    euler_theta   = wrapToPi(euler_theta);
+    euler_psi   = wrapToPi(euler_psi);
+
+    // std::cout << "Eulerangle" << ee_ori_eulerZYX_ << std::endl;
     // std::cout << "Recovered Euler (roll, pitch, yaw): "
     //           << euler_phi << ", " << euler_theta << ", " << euler_psi << std::endl;
   }
@@ -165,22 +197,45 @@ controller_interface::return_type ForcePDController::update(
   // // ZYZ 오일러 각 추출
   double z, y, x; //z1, y, z2
   // ee_initial_frame_.M.GetEulerZYZ(z1, y, z2); 
+
   ee_initial_frame_.M.GetEulerZYX(z, y, x);
   cart_initial(3) = z;
   cart_initial(4) = y;
   cart_initial(5) = x;
-  // cart_pos_goal(3) = 0.1745;
-  // cart_pos_goal(4) = 0.3491;
-  // cart_pos_goal(5) = 0.5236;
+
+  // Eigen::Matrix3d R1;
+  //   R1 << ee_initial_frame_.M(0,0), ee_initial_frame_.M(0,1), ee_initial_frame_.M(0,2),
+  //         ee_initial_frame_.M(1,0), ee_initial_frame_.M(1,1), ee_initial_frame_.M(1,2),
+  //         ee_initial_frame_.M(2,0), ee_initial_frame_.M(2,1), ee_initial_frame_.M(2,2);
+
+  //   // 3a) Eigen의 eulerAngles(2,1,0) 사용  ──────────────────────────────
+  // Eigen::Vector3d eulerZYX = R1.eulerAngles(2, 1, 0);  // [Z, Y, X] 순
+  // cart_initial(3) = eulerZYX[0];
+  // cart_initial(4) = eulerZYX[1];
+  // cart_initial(5) = eulerZYX[2];
+
 
   // std::cout << "cart_initial" << "\n"<< cart_initial << std::endl;
 
+  double delta_diff = 0.5 * std::cos(M_PI /3 * elapsed_time_);
+  // double delta_diff2 = 0.2 * std::cos(M_PI /5 * elapsed_time_);
+  cart_initial(2) += delta_diff;
+  // cart_initial(4) += delta_diff2;
+
   cart_pos_goal(0) = cart_initial(0);
-  cart_pos_goal(1) = cart_initial(1) + 0.5;
+  cart_pos_goal(1) = cart_initial(1);
   cart_pos_goal(2) = cart_initial(2);
-  cart_pos_goal(3) = cart_initial(3) + 0.1;
+  cart_pos_goal(3) = cart_initial(3);
   cart_pos_goal(4) = cart_initial(4);
   cart_pos_goal(5) = cart_initial(5);
+  
+
+  // cart_pos_goal(0) = 0.303891;
+  // cart_pos_goal(1) = 0.007245;
+  // cart_pos_goal(2) = 0.651902;
+  // cart_pos_goal(3) = -2.0504738;
+  // cart_pos_goal(4) = 2.715549;
+  // cart_pos_goal(5) = 1.790270;
 
   cart_pos_err(0) = cart_pos_goal(0) - ee_frame_.p.x();
   cart_pos_err(1) = cart_pos_goal(1) - ee_frame_.p.y();
@@ -189,6 +244,9 @@ controller_interface::return_type ForcePDController::update(
   cart_pos_err(4) = cart_pos_goal(4) - euler_theta;
   cart_pos_err(5) = cart_pos_goal(5) - euler_psi;
 
+  cart_pos_err(3)   = wrapToPi(cart_pos_err(3));
+  cart_pos_err(4)   = wrapToPi(cart_pos_err(4));
+  cart_pos_err(5)   = wrapToPi(cart_pos_err(5));
 
 // std::cout << "=======cart_pos_error=======\n"
 //           << "error z: " << cart_pos_err(0) << "\n"
@@ -199,7 +257,7 @@ controller_interface::return_type ForcePDController::update(
   Eigen::Matrix<double, 6,7> jac_ana_eigen = getCrtAnalyticJacobian(q_kdl);
   cart_vel_current = jac_ana_eigen * dq_;
   // std::cout << "k_gains : " << k_gains_ << std::endl;
-  std::cout << "cart_pos_err" << "\n"<< cart_pos_err << std::endl;
+  // std::cout << "cart_pos_err" << "\n"<< cart_pos_err << std::endl;  // 출력!
   Vector6d force_calculated = k_gains_.cwiseProduct(cart_pos_err) + d_gains_.cwiseProduct(cart_vel_goal - cart_vel_current);
   // std::cout << "force_calculated" << force_calculated << std::endl;
   Vector7d tau_d_calculated = jac_ana_eigen.transpose() * force_calculated;
@@ -221,14 +279,70 @@ controller_interface::return_type ForcePDController::update(
 //######자코비안 미분
   // Eigen::Matrix<double, 6,7> jacdot_ana_eigen = getCrtAnalyticJacobianDot(q_kdl, q_kdl_dot);
   // std::cout << "jacdot_ana_eigen" << "\n"<< jacdot_ana_eigen << std::endl;
-  std::cout << "tau_total" << "\n"<< tau_total << std::endl;
 
-
+  // std::cout << "tau_total" << "\n"<< tau_total << std::endl; // 출력!
   for (int i = 0; i < num_joints; ++i) {
     command_interfaces_[i].set_value(tau_total(i));
   }
 
+  // === 1) ee_frame_.p 퍼블리시 ===
+  {
+    geometry_msgs::msg::PointStamped msg;
+    msg.header.stamp = get_node()->now();
+    msg.header.frame_id = "base_link";  // 필요에 따라 변경
+    msg.point.x = ee_frame_.p.x();
+    msg.point.y = ee_frame_.p.y();
+    msg.point.z = ee_frame_.p.z();
+    ee_position_pub_->publish(msg);
+  }
 
+  // === 2) EE orientation (roll-pitch-yaw, ZYX) publish ===
+  {
+    std_msgs::msg::Float64MultiArray msg;
+    msg.layout.dim.resize(1);
+    msg.layout.dim[0].label  = "rpy";
+    msg.layout.dim[0].size   = 3;
+    msg.layout.dim[0].stride = 3;
+
+    msg.data = {euler_phi,   // Z-axis rotation (yaw)
+                euler_theta, // Y-axis rotation (pitch)
+                euler_psi};  // X-axis rotation (roll)
+
+    ee_orientation_pub_->publish(msg);
+  }
+
+  // === 3) cart_pos_err 퍼블리시 ===
+  {
+    std_msgs::msg::Float64MultiArray msg;
+    msg.layout.dim.resize(1);
+    msg.layout.dim[0].label = "error6";
+    msg.layout.dim[0].size = 6;
+    msg.layout.dim[0].stride = 6;
+    msg.data = std::vector<double>(cart_pos_err.data(), cart_pos_err.data() + 6);
+    cart_pos_err_pub_->publish(msg);
+  }
+
+  // === 4) tau_total 퍼블리시 ===
+  {
+    std_msgs::msg::Float64MultiArray msg;
+    msg.layout.dim.resize(1);
+    msg.layout.dim[0].label = "tau7";
+    msg.layout.dim[0].size = 7;
+    msg.layout.dim[0].stride = 7;
+    msg.data = std::vector<double>(tau_total.data(), tau_total.data() + 7);
+    tau_total_pub_->publish(msg);
+  }
+
+    // === 5) cart_goal 퍼블리시 ===
+  {
+    std_msgs::msg::Float64MultiArray msg;
+    msg.layout.dim.resize(1);
+    msg.layout.dim[0].label = "cart_goal";
+    msg.layout.dim[0].size = 6;
+    msg.layout.dim[0].stride = 6;
+    msg.data = std::vector<double>(cart_pos_goal.data(), cart_pos_goal.data() + 6);
+    cart_goal_pub_->publish(msg);
+  }
     return controller_interface::return_type::OK;
 }
 
@@ -296,7 +410,6 @@ CallbackReturn ForcePDController::on_configure(
   // jdot_solver_ = std::make_shared<KDL::ChainJntToJacDotSolver>(kdl_model_param_->getChain());
   //########################################################################
 
-
   // 이미 robot_description_ 을 갖고 있으니 그대로 파싱
   KDL::Tree tree;
   if (!kdl_parser::treeFromString(robot_description_, tree)) {
@@ -310,11 +423,19 @@ CallbackReturn ForcePDController::on_configure(
     return CallbackReturn::FAILURE;
   }
   fk_pos_solver_ = std::make_unique<KDL::ChainFkSolverPos_recursive>(kdl_chain_);
-
-
   //#################################################
   arm_id_ = robot_utils::getRobotNameFromDescription(robot_description_, get_node()->get_logger());
-
+  // --- Publishers ---
+  ee_position_pub_ = get_node()->create_publisher<geometry_msgs::msg::PointStamped>(
+    "ee_position", rclcpp::SystemDefaultsQoS());
+  ee_orientation_pub_ = get_node()->create_publisher<std_msgs::msg::Float64MultiArray>(
+    "ee_orientation_rpy", rclcpp::SystemDefaultsQoS());
+  cart_pos_err_pub_ = get_node()->create_publisher<std_msgs::msg::Float64MultiArray>(
+    "cart_pos_err", rclcpp::SystemDefaultsQoS());
+  tau_total_pub_ = get_node()->create_publisher<std_msgs::msg::Float64MultiArray>(
+    "tau_total", rclcpp::SystemDefaultsQoS());
+  cart_goal_pub_ = get_node()->create_publisher<std_msgs::msg::Float64MultiArray>(
+    "cart_goal", rclcpp::SystemDefaultsQoS());    
   return CallbackReturn::SUCCESS;
 }
 
@@ -324,7 +445,7 @@ CallbackReturn ForcePDController::on_activate(
   dq_filtered_.setZero();
   initial_q_ = q_;
   elapsed_time_ = 0.0;
-  //initialization_flag_ = true;
+  // initialization_flag_ = true;
 
   //franka_cartesian_pose_->assign_loaned_state_interfaces(state_interfaces_);
 
@@ -391,7 +512,14 @@ void ForcePDController::updateJointStates() {
 
     Eigen::Map<const Eigen::Matrix<double, 6, 7, Eigen::RowMajor>> jac_eigen(jac_kdl.data.data());
     // std::cout << "jac" << jac_eigen << std::endl;   
-    // std::cout << "Jac rank: " << matrixRank(jac_eigen) << std::endl;
+    
+    // int jac_rank = matrixRank(jac_eigen);
+    // std::cout << "Jac rank: " << jac_rank << std::endl;
+    // if (jac_rank < 6){
+    //       rclcpp::shutdown();
+    // }
+
+
 
     //geometric <> analytic jacobian conversion
     sphi = std::sin(euler_phi),  cphi = std::cos(euler_phi);
@@ -400,12 +528,13 @@ void ForcePDController::updateJointStates() {
     // T_ZYZ << 0, -sphi,  cphi * stheta,
     //           0,  cphi,  sphi * stheta,
     //           1,     0,        ctheta;
-    T_ZYX << 0, -sphi,   cphi * ctheta, 
-              0,  cphi,  sphi,
-              1,     0,  -stheta;
+    T_ZYX << 0,     -sphi,   cphi * ctheta, 
+              0,     cphi,   sphi,
+              1,     0,     -stheta;
     
     // T_A_ZYZ.bottomRightCorner<3,3>() = T_ZYZ;
     // Eigen::Matrix<double, 6,7> jac_ana_eigen = T_A_ZYZ.inverse() * jac_eigen; 
+    //해더에서 Eigen::Matrix<double, 6, 6> T_A_ZYX = Eigen::Matrix<double, 6, 6>::Identity();으로 정의하고 있고, 오른쪽 아래부분을 덮어씌움
     T_A_ZYX.bottomRightCorner<3,3>() = T_ZYX;
     Eigen::Matrix<double, 6,7> jac_ana_eigen = T_A_ZYX.inverse() * jac_eigen; 
     //std::cout << "T_A_ZYZ:" << T_A_ZYZ << std::endl; //출력
@@ -489,6 +618,14 @@ int ForcePDController::matrixRank(const Eigen::MatrixXd & M, double tol)
   Eigen::FullPivLU<Eigen::MatrixXd> lu(M);
   if (tol < 0) tol = lu.threshold();
   return lu.rank();
+}
+
+double ForcePDController::wrapToPi(double rad)
+{
+ double two_pi = 2.0 * M_PI;
+  while (rad >  M_PI)  rad -= two_pi;
+  while (rad <= -M_PI) rad += two_pi;
+  return rad;
 }
 
 

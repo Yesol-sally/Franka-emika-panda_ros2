@@ -29,6 +29,7 @@ from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import  LaunchConfiguration
 from launch_ros.actions import Node
+from launch.actions import TimerAction, Shutdown
 
 def get_robot_description(context: LaunchContext, arm_id, load_gripper, franka_hand):
     arm_id_str = context.perform_substitution(arm_id)
@@ -138,22 +139,24 @@ def generate_launch_description():
         cmd=['ros2', 'control', 'load_controller', '--set-state', 'active', 'force_pd_controller'],
         output='screen'
     )
-    # --- bag record 노드 추가 ---
-    bag_record = ExecuteProcess(
+
+    # ──────────── rosbag record 액션 정의 ────────────
+    rosbag_record = ExecuteProcess(
         cmd=[
             'ros2', 'bag', 'record',
-            # 기록할 토픽만 선택하고 싶으면 -a 대신 '/joint_states' 등 직접 명시하세요
-            '-a',
-            # 저장 디렉토리 및 파일명 지정
-            '-o', os.path.join(
-                get_package_share_directory('franka_description'),
-                'bags',
-                'franka_run_' + LaunchConfiguration('arm_id').perform({})  # arm_id 추가
-            )
+            '-d', '30',                    # 30초 후 자동 종료
+            '-o', '/home/airplon/franka_ws/franka_example_controllers/bagfiles/force_pd',  # 출력 디렉토리
+            '/ee_position',
+            '/ee_orientation_rpy',
+            '/cart_pos_err',
+            '/tau_total',
+            '/cart_goal',
         ],
-        output='screen',
-        shell=False
+        output='screen'
     )
+
+    # 로봇·컨트롤러가 뜬 뒤 5초 지연 후 bag 기록 시작
+    rosbag_timer = TimerAction(period=5.0, actions=[rosbag_record])    
 
     return LaunchDescription([
         load_gripper_launch_argument,
@@ -182,9 +185,9 @@ def generate_launch_description():
             name='joint_state_publisher',
             parameters=[
                 {'source_list': ['joint_states'],
-                 'rate': 30}], 
+                 'rate': 30}],
         ),
-        bag_record,
+        # ─── rosbag record (5 s 지연) ───
+        rosbag_timer,
+
     ])
-
-
