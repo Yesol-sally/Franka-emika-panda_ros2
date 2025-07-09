@@ -31,7 +31,8 @@
 
 #include <geometry_msgs/msg/point_stamped.hpp>  // Publishers for bag recording
 #include <std_msgs/msg/float64_multi_array.hpp>  // Publishers for bag recording
-#include <rclcpp/rclcpp.hpp>  
+#include <rclcpp/rclcpp.hpp>  //시뮬레이션 중단 기능
+#include <Eigen/Geometry>  //회정행렬 만들기
 
 namespace franka_example_controllers {
 
@@ -145,19 +146,37 @@ controller_interface::return_type ForcePDController::update(
     // << eulerZYX[1] << ", " << eulerZYX[2] << std::endl;
     // ee_ori_eulerZYX_ = Eigen::EulerAngles<double, Eigen::EulerSystemZYX>(R0);
 
-    
+  //Euler angle(ZYX)로 변환
     ee_ori_eulerZYX_ = Eigen::EulerAngles<double, Eigen::EulerSystemZYX>(ee_ori_rot_);
-    euler_phi  = ee_ori_eulerZYX_.alpha();   // Z축
-    euler_theta = ee_ori_eulerZYX_.beta();   // Y축
-    euler_psi   = ee_ori_eulerZYX_.gamma();  // X축
+    // euler_phi  = ee_ori_eulerZYX_.alpha();   // Z축
+    // euler_theta = ee_ori_eulerZYX_.beta();   // Y축
+    // euler_psi   = ee_ori_eulerZYX_.gamma();  // X축
 
-    euler_phi   = wrapToPi(euler_phi);
-    euler_theta   = wrapToPi(euler_theta);
-    euler_psi   = wrapToPi(euler_psi);
+    // euler_phi   = wrapToPi(euler_phi);
+    // euler_theta   = wrapToPi(euler_theta);
+    // euler_psi   = wrapToPi(euler_psi);
+
+    Eigen::Vector3d eul_cur;
+    eul_cur << ee_ori_eulerZYX_.alpha(),   // ψ (Z-yaw)
+                ee_ori_eulerZYX_.beta(),   // θ (Y-pitch)
+                ee_ori_eulerZYX_.gamma();  // φ (X-roll)
+
+    // ── ② unwrap으로 연속성 확보 ──────────────────────────
+    eul_cur = unwrapEulerZYX(eul_cur, eul_prev_);   // ❷ 점프 제거
+
+    // ── ③ 필요 시 ±π 로만 시각화 (제어에는 unwrap 값 사용) ─
+    euler_phi   = eul_cur.z();               // 또는 eul_cur(2)
+    euler_theta = eul_cur.y();
+    euler_psi   = eul_cur.x();
 
     // std::cout << "Eulerangle" << ee_ori_eulerZYX_ << std::endl;
     // std::cout << "Recovered Euler (roll, pitch, yaw): "
     //           << euler_phi << ", " << euler_theta << ", " << euler_psi << std::endl;
+  
+// Rotation matrix 기반으로 오차 생성
+  // Eigen::Matrix3d R_ref_ = makeRotationZYX(30.0, -15.0, 10.0);
+  // ee_ori_rot_err = R_ref_.transpose()*ee_ori_rot_;
+
   }
 
   //###########################################
@@ -197,12 +216,11 @@ controller_interface::return_type ForcePDController::update(
   // // ZYZ 오일러 각 추출
   double z, y, x; //z1, y, z2
   // ee_initial_frame_.M.GetEulerZYZ(z1, y, z2); 
-
   ee_initial_frame_.M.GetEulerZYX(z, y, x);
-  cart_initial(3) = z;
+  cart_initial(3) = z - 2;
   cart_initial(4) = y;
   cart_initial(5) = x;
-
+  
   // Eigen::Matrix3d R1;
   //   R1 << ee_initial_frame_.M(0,0), ee_initial_frame_.M(0,1), ee_initial_frame_.M(0,2),
   //         ee_initial_frame_.M(1,0), ee_initial_frame_.M(1,1), ee_initial_frame_.M(1,2),
@@ -221,6 +239,12 @@ controller_interface::return_type ForcePDController::update(
   // double delta_diff2 = 0.2 * std::cos(M_PI /5 * elapsed_time_);
   cart_initial(2) += delta_diff;
   // cart_initial(4) += delta_diff2;
+  Eigen::Vector3d eul_cur2;
+  eul_cur2 << cart_initial(3), cart_initial(4), cart_initial(5);
+  eul_cur2 = unwrapEulerZYX(eul_cur2, eul_prev_2);
+  cart_initial(3) = eul_cur2.z();
+  cart_initial(4) = eul_cur2.y();
+  cart_initial(5) = eul_cur2.x();
 
   cart_pos_goal(0) = cart_initial(0);
   cart_pos_goal(1) = cart_initial(1);
@@ -240,13 +264,23 @@ controller_interface::return_type ForcePDController::update(
   cart_pos_err(0) = cart_pos_goal(0) - ee_frame_.p.x();
   cart_pos_err(1) = cart_pos_goal(1) - ee_frame_.p.y();
   cart_pos_err(2) = cart_pos_goal(2) - ee_frame_.p.z();
+  // cart_pos_err(3) = cart_pos_goal(3) - euler_phi;
+  // cart_pos_err(4) = cart_pos_goal(4) - euler_theta;
+  // cart_pos_err(5) = cart_pos_goal(5) - euler_psi;
   cart_pos_err(3) = cart_pos_goal(3) - euler_phi;
   cart_pos_err(4) = cart_pos_goal(4) - euler_theta;
   cart_pos_err(5) = cart_pos_goal(5) - euler_psi;
 
-  cart_pos_err(3)   = wrapToPi(cart_pos_err(3));
-  cart_pos_err(4)   = wrapToPi(cart_pos_err(4));
-  cart_pos_err(5)   = wrapToPi(cart_pos_err(5));
+  Eigen::Vector3d eul_cur3;
+  eul_cur3 << cart_pos_err(3), cart_pos_err(4), cart_pos_err(5);
+  eul_cur3 = unwrapEulerZYX(eul_cur3, eul_prev_3);
+  cart_pos_err(3) = eul_cur3.z();
+  cart_pos_err(4) = eul_cur3.y();
+  cart_pos_err(5) = eul_cur3.x();
+  // cart_pos_err(3)   = wrapToPi(cart_pos_err(3));
+  // cart_pos_err(4)   = wrapToPi(cart_pos_err(4));
+  // cart_pos_err(5)   = wrapToPi(cart_pos_err(5));
+
 
 // std::cout << "=======cart_pos_error=======\n"
 //           << "error z: " << cart_pos_err(0) << "\n"
@@ -447,6 +481,13 @@ CallbackReturn ForcePDController::on_activate(
   elapsed_time_ = 0.0;
   // initialization_flag_ = true;
 
+
+  // ZYX Euler 초기화 (= 첫 브랜치)
+  Eigen::EulerAngles<double, Eigen::EulerSystemZYX> eul0(ee_ori_rot_);
+  eul_prev_ = {eul0.alpha(), eul0.beta(), eul0.gamma()};
+  eul_prev_2 = {eul0.alpha(), eul0.beta(), eul0.gamma()};
+  eul_prev_3 = {eul0.alpha(), eul0.beta(), eul0.gamma()};
+
   //franka_cartesian_pose_->assign_loaned_state_interfaces(state_interfaces_);
 
 
@@ -627,7 +668,46 @@ double ForcePDController::wrapToPi(double rad)
   while (rad <= -M_PI) rad += two_pi;
   return rad;
 }
+// degree → radian 변환 함수
+inline double deg2rad(double deg) {
+    return deg * M_PI / 180.0;
+}
 
+Eigen::Vector3d ForcePDController::unwrapEulerZYX(
+    const Eigen::Vector3d& cur,
+    Eigen::Vector3d&       prev) {
+
+  Eigen::Vector3d out = cur;
+  const double two_pi = 2.0 * M_PI;
+  for (int i = 0; i < 3; ++i) {
+    double diff = cur(i) - prev(i);
+    if (diff >  M_PI) out(i) -= two_pi;
+    if (diff < -M_PI) out(i) += two_pi;
+  }
+  prev = out;
+  return out;
+}
+
+
+// Z→Y→X 순 회전행렬 생성 함수
+// Eigen::Matrix3d makeRotationZYX(double z_deg, double y_deg, double x_deg)
+// {
+//     // degree → radian
+//     double z_rad = deg2rad(z_deg);
+//     double y_rad = deg2rad(y_deg);
+//     double x_rad = deg2rad(x_deg);
+
+//     // 각 축에 대한 AngleAxis 생성
+//     Eigen::AngleAxisd rot_z(z_rad, Eigen::Vector3d::UnitZ());
+//     Eigen::AngleAxisd rot_y(y_rad, Eigen::Vector3d::UnitY());
+//     Eigen::AngleAxisd rot_x(x_rad, Eigen::Vector3d::UnitX());
+
+//     // Z축 회전 후 Y축, 그다음 X축 회전 순으로 곱함
+//     Eigen::Quaterniond q = rot_z * rot_y * rot_x;
+
+//     // Quaternion → 회전행렬
+//     return q.toRotationMatrix();
+// }
 
 }  // namespace franka_example_controllers
 #include "pluginlib/class_list_macros.hpp"

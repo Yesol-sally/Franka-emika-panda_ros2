@@ -93,6 +93,7 @@ class ForcePDController : public controller_interface::ControllerInterface {
 //   Eigen::EulerAngles<double, Eigen::EulerSystemZYZ> ee_ori_eulerZYZ_;
   Eigen::EulerAngles<double, Eigen::EulerSystemZYX> ee_ori_eulerZYX_;
   Eigen::Matrix3d ee_ori_rot_;
+  Eigen::Matrix3d ee_ori_rot_err;
 
   double euler_phi {0.0};
   double euler_theta {0.0};
@@ -114,5 +115,11 @@ class ForcePDController : public controller_interface::ControllerInterface {
 
   int matrixRank(const Eigen::MatrixXd & M, double tol = -1.0); //rank 확인용 함수
   double wrapToPi(double rad);
+  Eigen::Vector3d eul_prev_{Eigen::Vector3d::Zero()};   // unwrap용
+  Eigen::Vector3d eul_prev_2{Eigen::Vector3d::Zero()};   // unwrap용
+  Eigen::Vector3d eul_prev_3{Eigen::Vector3d::Zero()};   // unwrap용
+
+  Eigen::Vector3d unwrapEulerZYX(const Eigen::Vector3d& cur, Eigen::Vector3d& prev);
+
 };
 }  // namespace franka_example_controllers
