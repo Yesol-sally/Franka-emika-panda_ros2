@@ -50,7 +50,8 @@ def get_robot_description(context: LaunchContext, arm_id, load_gripper, franka_h
             'hand': load_gripper_str, 
             'ros2_control': 'true', 
             'gazebo': 'true', 
-            'ee_id': franka_hand_str
+            'ee_id': franka_hand_str,
+            'gazebo_effort':  'true',  # ★ 추가 ★
         }
     )
     robot_description = {'robot_description': robot_description_config.toxml()}

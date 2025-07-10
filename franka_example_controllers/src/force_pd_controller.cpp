@@ -217,7 +217,7 @@ controller_interface::return_type ForcePDController::update(
   double z, y, x; //z1, y, z2
   // ee_initial_frame_.M.GetEulerZYZ(z1, y, z2); 
   ee_initial_frame_.M.GetEulerZYX(z, y, x);
-  cart_initial(3) = z - 2;
+  cart_initial(3) = z;
   cart_initial(4) = y;
   cart_initial(5) = x;
   
@@ -298,9 +298,9 @@ controller_interface::return_type ForcePDController::update(
   // Vector7d tau_total = tau_d_calculated;
 //#################null space control 추가
   Eigen::Matrix<double, 7, 1> K0;
-  K0.setConstant(5);
+  K0.setConstant(0.05);
   Vector7d tau_n = Nullspace_controller(mass_matrix_, dq_, jac_ana_eigen, K0);
-  Vector7d tau_total = tau_d_calculated; // + tau_n;
+  Vector7d tau_total = tau_d_calculated + tau_n;
 //#################중력보상 추가
   // Eigen::Matrix<double, 7, 1> gravity_eigen;
   // for (int i = 0; i < num_joints; ++i) {
